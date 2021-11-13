@@ -1,0 +1,98 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  app
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+
+  #
+  # AUTH FUNCTIONS
+  #
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: put-item.js
+  SignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/auth/signup/index.signupHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: Signup to the todo application
+      Policies:
+        # Give Create/Read/Update/Delete permission for db
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodoAppTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          STORAGE_TABLE: !Ref TodoAppTable
+          SALT: 10
+      Layers: 
+        - !Ref LibraryLayer
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /auth/signup
+            Method: POST
+
+  #
+  # ITEM FUNCTIONS
+  #
+
+  #
+  # LAYER
+  #
+
+  # Layer with libraries and helpers 
+  LibraryLayer: 
+    Type: AWS::Serverless::LayerVersion
+    Properties: 
+      LayerName: todo-app-dependencies
+      Description: Libraries and helper functions for Todo app. 
+      ContentUri: src/layers/
+      CompatibleRuntimes: 
+        - nodejs14.x
+      RetentionPolicy: Retain
+
+  #
+  # TABLE
+  #
+  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
+
+  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
+  TodoAppTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "TodoAppTable"
+      KeySchema: 
+        - 
+          AttributeName: "PK"
+          KeyType: "HASH"
+        -
+          AttributeName: "SK"
+          KeyType: "RANGE" 
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
+Outputs:
+  WebEndpoint:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
