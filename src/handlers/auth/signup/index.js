@@ -44,12 +44,14 @@ exports.handler = async(event, context) => {
     }
 
     // set params for user signup
+    const now = new Date();
     params = {
         TableName: tableName,
         Item: {
             "PK": { S: email },
             "SK": { S: email },
-            "password": { S: password }
+            "password": { S: password },
+            "createdDt": { S: now.toISOString() }
         }
     };
 

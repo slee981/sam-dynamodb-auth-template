@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
 const db = require('/opt/nodejs/lib/db')
-const util = require('/opt/nodejs/lib/util')
+const { addMinutesToTime } = require('/opt/nodejs/lib/util')
+const { resetTokenKey, resetTokenLiveTime } = require('/opt/nodejs/lib/util/variables.js');
 
 const tableName = process.env.STORAGE_TABLE;
 const salt = process.env.SALT;
-const resetTokenKey = "reset";
 
 let params;
 let response;
@@ -48,24 +48,37 @@ exports.handler = async(event, context) => {
 
     // check stored reset token info 
     const actualResetToken = userInfo.resetToken.S;
-    const createdDt = userInfo.createdDt.S;
+    const createdDt = new Date(userInfo.createdDt.S);
+    const expires = await addMinutesToTime(createdDt, resetTokenLiveTime);
+    console.info("expires result " + expires);
+    const expiresDt = new Date(expires);
+    console.info("expiresDt result " + expiresDt);
 
-    // if token doesn't match, or has expired, return unauthorized 
-    //
-    // TODO: check against date 
-    //
+    // if token doesn't match what is stored, reject 
     if (actualResetToken !== tokenSent) {
         response = {
             statusCode: 403,
             body: JSON.stringify({
-                message: "unauthorized reset"
+                message: "unauthorized reset: tokens don't match"
             })
         }
         console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
         return response;
     }
 
-    // tokens match, so set new password
+    // if token is expired, reject
+    if (new Date() > expiresDt) {
+        response = {
+            statusCode: 403,
+            body: JSON.stringify({
+                message: "token expired"
+            })
+        }
+        console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
+        return response;
+    }
+
+    // tokens match and are valid, so set new password
     params = {
         TableName: tableName,
         Item: {

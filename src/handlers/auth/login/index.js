@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
 const db = require('/opt/nodejs/lib/db')
 const util = require('/opt/nodejs/lib/util')
+const { sessionTokenKey } = require('/opt/nodejs/lib/util/variables.js');
 
 const tableName = process.env.STORAGE_TABLE;
 const salt = process.env.SALT;
-const sessionTokenKey = "session";
 
 let params;
 let response;
