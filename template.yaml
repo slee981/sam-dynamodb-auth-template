@@ -131,23 +131,20 @@ Resources:
   # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
 
-  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
   TodoAppTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: "TodoAppTable"
       KeySchema: 
-        - 
-          AttributeName: "PK"
+        - AttributeName: "PK"
           KeyType: "HASH"
-        -
-          AttributeName: "SK"
+        - AttributeName: "SK"
           KeyType: "RANGE" 
       ProvisionedThroughput:
         ReadCapacityUnits: 2
         WriteCapacityUnits: 2
 
 Outputs:
-  WebEndpoint:
+  AuthAppApi:
     Description: "API Gateway endpoint URL for Prod stage"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
