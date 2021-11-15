@@ -11,12 +11,12 @@ exports.addMinutesToTime = (dt, minutes) => {
     const current = dt.getTime();
     // 60 s in a minute, 1000 ms in a second
     const msToAdd = minutes * 60 * 1000;
-    return (current + msToAdd)
+    return new Date(current + msToAdd)
 }
 
 exports.addDaysToTime = (dt, days) => {
     const current = dt.getTime();
     // 24hrs in a day, 60 min in an housr, 60 s in a minute, 1000 ms in a second
     const daysToAdd = days * 24 * 60 * 60 * 1000;
-    return (current + daysToAdd)
+    return new Date(current + daysToAdd)
 }

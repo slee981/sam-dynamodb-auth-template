@@ -49,10 +49,7 @@ exports.handler = async(event, context) => {
     // check stored reset token info 
     const actualResetToken = userInfo.resetToken.S;
     const createdDt = new Date(userInfo.createdDt.S);
-    const expires = await addMinutesToTime(createdDt, resetTokenLiveTime);
-    console.info("expires result " + expires);
-    const expiresDt = new Date(expires);
-    console.info("expiresDt result " + expiresDt);
+    const expiresDt = await addMinutesToTime(createdDt, resetTokenLiveTime);
 
     // if token doesn't match what is stored, reject 
     if (actualResetToken !== tokenSent) {
