@@ -12,6 +12,18 @@ Description: >-
 Transform:
 - AWS::Serverless-2016-10-31
 
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Architectures:
+      - x86_64
+    MemorySize: 128
+    Timeout: 180
+    Environment:
+      Variables:
+        STORAGE_TABLE: !Ref TodoAppTable
+        SALT: 10
+
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
@@ -22,26 +34,15 @@ Resources:
   # Each Lambda function is defined by properties:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
-  # This is a Lambda function config associated with the source code: put-item.js
   SignupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/auth/signup/index.signupHandler
-      Runtime: nodejs14.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
+      Handler: src/handlers/auth/signup/index.handler
       Description: Signup to the todo application
       Policies:
         # Give Create/Read/Update/Delete permission for db
         - DynamoDBCrudPolicy:
             TableName: !Ref TodoAppTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          STORAGE_TABLE: !Ref TodoAppTable
-          SALT: 10
       Layers: 
         - !Ref LibraryLayer
       Events:
@@ -51,26 +52,15 @@ Resources:
             Path: /auth/signup
             Method: POST
 
-  # This is a Lambda function config associated with the source code: put-item.js
   LoginFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/auth/login/index.loginHandler
-      Runtime: nodejs14.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
+      Handler: src/handlers/auth/login/index.handler
       Description: Login to the todo application
       Policies:
         # Give Create/Read/Update/Delete permission for db
         - DynamoDBCrudPolicy:
             TableName: !Ref TodoAppTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          STORAGE_TABLE: !Ref TodoAppTable
-          SALT: 10
       Layers: 
         - !Ref LibraryLayer
       Events:
@@ -78,6 +68,42 @@ Resources:
           Type: Api
           Properties:
             Path: /auth/login
+            Method: POST
+
+  ResetPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/auth/reset/index.handler
+      Description: Reset password to the todo application
+      Policies:
+        # Give Create/Read/Update/Delete permission for db
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodoAppTable
+      Layers: 
+        - !Ref LibraryLayer
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /auth/reset
+            Method: POST
+
+  ForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/auth/forgot/index.handler
+      Description: Forgot password to the todo application
+      Policies:
+        # Give Create/Read/Update/Delete permission for db
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodoAppTable
+      Layers: 
+        - !Ref LibraryLayer
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /auth/forgot
             Method: POST
 
   #

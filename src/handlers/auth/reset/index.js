@@ -1,8 +1,10 @@
 const bcrypt = require('bcryptjs');
 const db = require('/opt/nodejs/lib/db')
+const util = require('/opt/nodejs/lib/util')
 
 const tableName = process.env.STORAGE_TABLE;
 const salt = process.env.SALT;
+const resetTokenKey = "reset";
 
 let params;
 let response;
@@ -13,11 +15,12 @@ exports.handler = async(event, context) => {
     }
 
     // get email and password
-    const body = JSON.parse(event.body)
+    const body = JSON.parse(event.body);
     const email = body.email;
-    const password = await bcrypt.hash(body.password, +salt);
+    const newPassword = await bcrypt.hash(body.password, +salt);
+    const tokenSent = event.queryStringParameters.resetToken;
 
-    // check if user already exists 
+    // check if user has valid reset token 
     params = {
         TableName: tableName,
         Key: {
@@ -25,31 +28,47 @@ exports.handler = async(event, context) => {
                 S: email
             },
             "SK": {
-                S: email
+                S: resetTokenKey
             }
         },
     };
     const userRaw = await db.dynamodb.getItem(params).promise();
     const userInfo = userRaw.Item;
-    if (userInfo) {
-        // user exists - respond as unauthorized 
+    if (!userInfo) {
+        // USER NOT FOUND
         response = {
-            statusCode: 403,
+            statusCode: 404,
             body: JSON.stringify({
-                message: "user already exists."
+                message: "user reset not found."
             })
         };
         console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
         return response;
     }
 
-    // set params for user signup
+    // check stored reset token info 
+    const actualResetToken = userInfo.resetToken.S;
+    const createdDt = userInfo.createdDt.S;
+
+    // if token doesn't match, or has expired, return unauthorized 
+    if (actualResetToken !== tokenSent) {
+        response = {
+            statusCode: 403,
+            body: JSON.stringify({
+                message: "unauthorized reset"
+            })
+        }
+        console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
+        return response;
+    }
+
+    // tokens match, so set new password
     params = {
         TableName: tableName,
         Item: {
             "PK": { S: email },
             "SK": { S: email },
-            "password": { S: password }
+            "password": { S: newPassword }
         }
     };
 
@@ -57,7 +76,7 @@ exports.handler = async(event, context) => {
     response = {
         statusCode: 200,
         body: JSON.stringify({
-            message: "user successfully added."
+            message: "user password updated successfully."
         })
     };
 

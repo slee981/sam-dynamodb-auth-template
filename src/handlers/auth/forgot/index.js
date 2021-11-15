@@ -1,8 +1,10 @@
 const bcrypt = require('bcryptjs');
 const db = require('/opt/nodejs/lib/db')
+const util = require('/opt/nodejs/lib/util')
 
 const tableName = process.env.STORAGE_TABLE;
 const salt = process.env.SALT;
+const resetTokenKey = "reset";
 
 let params;
 let response;
@@ -12,12 +14,11 @@ exports.handler = async(event, context) => {
         throw new Error(`postMethod only accepts POST method, you tried: ${event.httpMethod} method.`);
     }
 
-    // get email and password
+    // get email 
     const body = JSON.parse(event.body)
     const email = body.email;
-    const password = await bcrypt.hash(body.password, +salt);
 
-    // check if user already exists 
+    // check if user exists 
     params = {
         TableName: tableName,
         Key: {
@@ -31,33 +32,37 @@ exports.handler = async(event, context) => {
     };
     const userRaw = await db.dynamodb.getItem(params).promise();
     const userInfo = userRaw.Item;
-    if (userInfo) {
-        // user exists - respond as unauthorized 
+    if (!userInfo) {
+        // NOT FOUND: user doesn't exist 
         response = {
-            statusCode: 403,
+            statusCode: 404,
             body: JSON.stringify({
-                message: "user already exists."
+                message: "user not found."
             })
         };
         console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
         return response;
     }
 
-    // set params for user signup
+    // user exists, so generate reset token and email user 
+    const resetToken = util.genToken();
+    const dt = new Date();
     params = {
         TableName: tableName,
         Item: {
             "PK": { S: email },
-            "SK": { S: email },
-            "password": { S: password }
+            "SK": { S: resetTokenKey },
+            "resetToken": { S: resetToken },
+            "createdDt": { S: dt.toISOString() },
         }
     };
-
     const result = await db.dynamodb.putItem(params).promise();
+
+    // TODO: implement send email 
     response = {
         statusCode: 200,
         body: JSON.stringify({
-            message: "user successfully added."
+            message: "email sent to user with reset link.",
         })
     };
 

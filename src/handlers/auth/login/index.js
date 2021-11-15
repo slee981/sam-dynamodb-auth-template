@@ -9,7 +9,7 @@ const sessionTokenKey = "session";
 let params;
 let response;
 
-exports.loginHandler = async(event, context) => {
+exports.handler = async(event, context) => {
     if (event.httpMethod !== 'POST') {
         throw new Error(`postMethod only accepts POST method, you tried: ${event.httpMethod} method.`);
     }
@@ -34,9 +34,9 @@ exports.loginHandler = async(event, context) => {
     const userRaw = await db.dynamodb.getItem(params).promise();
     const userInfo = userRaw.Item;
     if (!userInfo) {
-        // FORBIDDEN: user doesn't exist - respond as unauthorized 
+        // NOT FOUND: user doesn't exist 
         response = {
-            statusCode: 403,
+            statusCode: 404,
             body: JSON.stringify({
                 message: "user not found."
             })
@@ -46,7 +46,6 @@ exports.loginHandler = async(event, context) => {
     }
 
     // user exists, so check password provided with stored password 
-    console.info("user password: " + userInfo.password.S)
     const isValid = await bcrypt.compare(password, userInfo.password.S);
     if (!isValid) {
         // UNAUTHORIZED: return wrong password 
