@@ -1,13 +1,15 @@
 const bcrypt = require('bcryptjs');
 const db = require('/opt/nodejs/lib/db')
+const util = require('/opt/nodejs/lib/util')
 
 const tableName = process.env.STORAGE_TABLE;
 const salt = process.env.SALT;
+const sessionTokenKey = "session";
 
 let params;
 let response;
 
-exports.signupHandler = async(event, context) => {
+exports.loginHandler = async(event, context) => {
     if (event.httpMethod !== 'POST') {
         throw new Error(`postMethod only accepts POST method, you tried: ${event.httpMethod} method.`);
     }
@@ -15,7 +17,7 @@ exports.signupHandler = async(event, context) => {
     // get email and password
     const body = JSON.parse(event.body)
     const email = body.email;
-    const password = await bcrypt.hash(body.password, +salt);
+    const password = body.password;
 
     // check if user already exists 
     params = {
@@ -31,25 +33,44 @@ exports.signupHandler = async(event, context) => {
     };
     const userRaw = await db.dynamodb.getItem(params).promise();
     const userInfo = userRaw.Item;
-    if (userInfo) {
-        // user exists - respond as unauthorized 
+    if (!userInfo) {
+        // FORBIDDEN: user doesn't exist - respond as unauthorized 
         response = {
             statusCode: 403,
             body: JSON.stringify({
-                message: "user already exists."
+                message: "user not found."
             })
         };
         console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
         return response;
     }
 
-    // set params for user signup
+    // user exists, so check password provided with stored password 
+    console.info("user password: " + userInfo.password.S)
+    const isValid = await bcrypt.compare(password, userInfo.password.S);
+    if (!isValid) {
+        // UNAUTHORIZED: return wrong password 
+        response = {
+            statusCode: 401,
+            body: JSON.stringify({
+                message: "incorrect password."
+            })
+        };
+
+        console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
+        return response;
+    }
+
+    // issue new session token and store 
+    const sessionToken = util.genToken();
+    const dt = new Date();
     params = {
         TableName: tableName,
         Item: {
             "PK": { S: email },
-            "SK": { S: email },
-            "password": { S: password }
+            "SK": { S: sessionTokenKey },
+            "sessionToken": { S: sessionToken },
+            "createdDt": { S: dt.toISOString() },
         }
     };
 
@@ -57,7 +78,8 @@ exports.signupHandler = async(event, context) => {
     response = {
         statusCode: 200,
         body: JSON.stringify({
-            message: "user successfully added."
+            message: "user logged in successfully.",
+            token: sessionToken,
         })
     };
 
