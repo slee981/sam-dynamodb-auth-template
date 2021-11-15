@@ -51,6 +51,9 @@ exports.handler = async(event, context) => {
     const createdDt = userInfo.createdDt.S;
 
     // if token doesn't match, or has expired, return unauthorized 
+    //
+    // TODO: check against date 
+    //
     if (actualResetToken !== tokenSent) {
         response = {
             statusCode: 403,

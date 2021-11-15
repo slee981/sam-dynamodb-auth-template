@@ -58,7 +58,9 @@ exports.handler = async(event, context) => {
     };
     const result = await db.dynamodb.putItem(params).promise();
 
+    //
     // TODO: implement send email 
+    //
     response = {
         statusCode: 200,
         body: JSON.stringify({
