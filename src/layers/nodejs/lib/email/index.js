@@ -21,7 +21,7 @@ const ses = new AWS.SES(options);
  */
 
 buildForgotPasswordEmailParams = (to, resetToken) => {
-    const resetURL = `${BASE_URL}?${resetToken}`;
+    const resetURL = `${BASE_URL}?resetToken=${resetToken}`;
     return {
         Destination: {
             CcAddresses: [],
