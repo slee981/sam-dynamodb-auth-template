@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
 const db = require('/opt/nodejs/lib/db')
 const util = require('/opt/nodejs/lib/util')
+const { sendForgotPasswordEmail } = require('/opt/nodejs/lib/email')
 const { resetTokenKey } = require('/opt/nodejs/lib/util/variables.js');
 
 const tableName = process.env.STORAGE_TABLE;
-const salt = process.env.SALT;
 
 let params;
 let response;
@@ -61,6 +61,7 @@ exports.handler = async(event, context) => {
     //
     // TODO: implement send email 
     //
+    const sendEmailResult = await sendForgotPasswordEmail(email, resetToken);
     response = {
         statusCode: 200,
         body: JSON.stringify({

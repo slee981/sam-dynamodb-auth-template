@@ -20,8 +20,26 @@ Globals:
     Timeout: 180
     Environment:
       Variables:
+        BASE_URL: "https://83r77oyrl1.execute-api.us-east-1.amazonaws.com/Prod"
+        FROM_EMAIL_ADDRESS: "smlee.981@gmail.com"
         STORAGE_TABLE: !Ref TodoAppTable
         SALT: 10
+        REGION: us-east-1
+        AWS_API_VERSION: "2012-08-10"
+
+Parameters:
+  ForgotPasswordTemplateName: 
+    Type: String 
+    Default: ForgotPasswordEmailTemplate
+  ForgotPasswordSubjectPart: 
+    Type: String 
+    Default: Reset your password.
+  ForgotPasswordTextPart: 
+    Type: String
+    Default: Hello this is a test with url {{ RESET_URL }}.
+  ForgotPasswordHtmlPart: 
+    Type: String
+    Default: Hello this is a test with url {{ RESET_URL }}.
 
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
@@ -65,6 +83,7 @@ Resources:
         # Give Create/Read/Update/Delete permission for db
         - DynamoDBCrudPolicy:
             TableName: !Ref TodoAppTable
+        # TODO: give SES permission 
       Layers: 
         - !Ref LibraryLayer
       Events:
@@ -103,6 +122,7 @@ Resources:
         # Give Create/Read/Update/Delete permission for db
         - DynamoDBCrudPolicy:
             TableName: !Ref TodoAppTable
+        # TODO: give SES permission 
       Layers: 
         - !Ref LibraryLayer
       Events:
@@ -122,6 +142,7 @@ Resources:
         # Give Create/Read/Update/Delete permission for db
         - DynamoDBCrudPolicy:
             TableName: !Ref TodoAppTable
+        - AmazonSESFullAccess
       Layers: 
         - !Ref LibraryLayer
       Events:
@@ -149,6 +170,19 @@ Resources:
       CompatibleRuntimes: 
         - nodejs14.x
       RetentionPolicy: Retain
+
+  #
+  # EMAIL 
+  #
+  
+  ForgotPasswordEmailTemplate:
+    Type: AWS::SES::Template
+    Properties:
+      Template:
+        TemplateName: !Ref ForgotPasswordTemplateName
+        SubjectPart: !Ref ForgotPasswordSubjectPart
+        TextPart: !Ref ForgotPasswordTextPart
+        HtmlPart: !Ref ForgotPasswordHtmlPart
 
 Outputs:
   AuthAppApi:

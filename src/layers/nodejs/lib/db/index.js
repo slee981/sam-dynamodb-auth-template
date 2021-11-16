@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
+const apiVersion = process.env.AWS_API_VERSION;
 let options = {
-    apiVersion: '2012-08-10',
+    apiVersion: apiVersion
 }
 
 if (process.env.AWS_SAM_LOCAL === 'true') {
