@@ -9,8 +9,7 @@ Description: >-
 
 # Transform section specifies one or more macros that AWS CloudFormation uses to process your template
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
-Transform:
-- AWS::Serverless-2016-10-31
+Transform: AWS::Serverless-2016-10-31
 
 Globals:
   Function:
@@ -29,6 +28,28 @@ Globals:
 Resources:
 
   #
+  # TABLE
+  #
+
+  TodoAppTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions: 
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      TableName: "TodoAppTable"
+      KeySchema: 
+        - AttributeName: "PK"
+          KeyType: "HASH"
+        - AttributeName: "SK"
+          KeyType: "RANGE" 
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
+  #
   # AUTH FUNCTIONS
   #
   # Each Lambda function is defined by properties:
@@ -37,7 +58,8 @@ Resources:
   SignupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/auth/signup/index.handler
+      CodeUri: src/handlers/auth/signup/
+      Handler: index.handler
       Description: Signup to the todo application
       Policies:
         # Give Create/Read/Update/Delete permission for db
@@ -55,7 +77,8 @@ Resources:
   LoginFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/auth/login/index.handler
+      CodeUri: src/handlers/auth/login/
+      Handler: index.handler
       Description: Login to the todo application
       Policies:
         # Give Create/Read/Update/Delete permission for db
@@ -73,7 +96,8 @@ Resources:
   ResetPasswordFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/auth/reset/index.handler
+      CodeUri: src/handlers/auth/reset/
+      Handler: index.handler
       Description: Reset password to the todo application
       Policies:
         # Give Create/Read/Update/Delete permission for db
@@ -91,7 +115,8 @@ Resources:
   ForgotPasswordFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/auth/forgot/index.handler
+      CodeUri: src/handlers/auth/forgot/
+      Handler: index.handler
       Description: Forgot password to the todo application
       Policies:
         # Give Create/Read/Update/Delete permission for db
@@ -125,26 +150,8 @@ Resources:
         - nodejs14.x
       RetentionPolicy: Retain
 
-  #
-  # TABLE
-  #
-  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
-
-  TodoAppTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: "TodoAppTable"
-      KeySchema: 
-        - AttributeName: "PK"
-          KeyType: "HASH"
-        - AttributeName: "SK"
-          KeyType: "RANGE" 
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
-
 Outputs:
   AuthAppApi:
     Description: "API Gateway endpoint URL for Prod stage"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  
