@@ -58,9 +58,7 @@ exports.handler = async(event, context) => {
     };
     const result = await db.dynamodb.putItem(params).promise();
 
-    //
-    // TODO: implement send email 
-    //
+    // send forgot password email
     const sendEmailResult = await sendForgotPasswordEmail(email, resetToken);
     response = {
         statusCode: 200,

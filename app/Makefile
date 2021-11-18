@@ -1,4 +1,4 @@
-NETWORK_NAME=todo-app-network
+NETWORK_NAME=auth-template-network
 REGION=us-east-1
 STACK_NAME=simple-auth-app
 

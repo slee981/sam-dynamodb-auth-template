@@ -1,5 +1,3 @@
-// TODO: export client 
-// const { SESClient, SendTemplatedEmailCommand } = require("aws-sdk/client-ses");
 const AWS = require('aws-sdk');
 
 const apiVersion = process.env.AWS_API_VERSION;
