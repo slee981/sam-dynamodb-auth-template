@@ -2,6 +2,7 @@ DB_NAME=auth-template-db
 VOLUME_NAME=auth-template-volume
 NETWORK_NAME=auth-template-network
 NETWORK_ALIAS=dynamodb
+TABLE_NAME=AuthTable
 PORT=8000
 
 start: 
@@ -24,5 +25,5 @@ list-tables:
 	aws dynamodb list-tables --endpoint-url http://localhost:$(PORT)
 
 scan: 
-	aws dynamodb scan --table-name TodoAppTable --endpoint-url http://localhost:$(PORT)
+	aws dynamodb scan --table-name $(TABLE_NAME) --endpoint-url http://localhost:$(PORT)
 

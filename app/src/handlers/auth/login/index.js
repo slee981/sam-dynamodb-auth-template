@@ -5,6 +5,7 @@ const { sessionTokenKey } = require('/opt/nodejs/lib/util/variables.js');
 
 const tableName = process.env.STORAGE_TABLE;
 const salt = process.env.SALT;
+const sessionTokenAttribute = process.env.SESSION_TOKEN_ATTRIBUTE;
 
 let params;
 let response;
@@ -68,7 +69,7 @@ exports.handler = async(event, context) => {
         Item: {
             "PK": { S: email },
             "SK": { S: sessionTokenKey },
-            "sessionToken": { S: sessionToken },
+            [sessionTokenAttribute ]: { S: sessionToken },
             "createdDt": { S: dt.toISOString() },
         }
     };
